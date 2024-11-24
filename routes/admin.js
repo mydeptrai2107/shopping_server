@@ -22,6 +22,36 @@ adminRouter.post("/admin/add-product", admin , async (req, res) => {
     }
 });
 
+adminRouter.put("/admin/update-product", admin, async (req, res) => {
+    try {
+        const { id, name, description, images, quantity, price, category } = req.body;
+
+        // Tìm sản phẩm theo ID
+        let product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+
+        // Cập nhật các trường thông tin của sản phẩm
+        product.name = name || product.name;
+        product.description = description || product.description;
+        product.images = images || product.images;
+        product.quantity = quantity || product.quantity;
+        product.price = price || product.price;
+        product.category = category || product.category;
+
+        // Lưu sản phẩm đã cập nhật
+        product = await product.save();
+
+        // Trả về thông tin sản phẩm đã cập nhật
+        res.json(product);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 adminRouter.get("/admin/get-products", admin, async (req, res) => {
     try {
         const products  = await Product.find({});
