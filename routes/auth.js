@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../model/user");
+const Shop = require("../model/shop");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const auth = require("../middlewares/auth");
@@ -95,5 +96,30 @@ authRouter.get('/', auth, async (req, res) => {
     res.json({...user._doc, token: req.token});
 })
 
+
+// Sign Admin in Route
+authRouter.post('/shop/signin', async (req, res ) => {
+    try {
+        let {email, password} = req.body;
+
+        email = email.toLowerCase();
+
+        const shop = await Shop.findOne({email});
+        if(!shop){
+            return res.status(400).json({msg : "User does not exist!"});
+        }
+
+        const isMatch = await bcrypt.compare(password, shop.password);
+        if(!isMatch){
+            return res.status(400).json({msg : "Incorrect password!"})
+        }
+        
+        const token = jwt.sign({id: shop._id, type: 'admin'}, "passwordKey");
+        res.json({token, ...shop._doc});
+
+    } catch (e) {
+        res.status(500).json({msg: e.message});
+    }
+})
 
 module.exports = authRouter;

@@ -127,6 +127,8 @@ userRouter.post("/api/order", auth, async (req, res) => {
     try {
         const { totalPrice, address, voucherCode, paid , payMethod} = req.body;
         let user = await User.findById(req.user);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
         const userCart = user.cart;
         let products = [];
 

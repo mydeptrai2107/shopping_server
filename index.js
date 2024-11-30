@@ -10,6 +10,7 @@ const productRouter = require('./routes/product');
 const userRouter = require('./routes/user');
 const offersRouter = require('./routes/offers');
 const voucherRoute = require('./routes/voucher');
+const shopRoute = require('./routes/shop');
 const app = express();
 // const PORT = process.env.PORT;
 const PORT = 3000;
@@ -26,6 +27,7 @@ app.use(productRouter);
 app.use(userRouter);
 app.use(offersRouter);
 app.use(voucherRoute);
+app.use(shopRoute);
 
 mongoose.connect(DB).then(()=>{
     console.log('Mongoose Connected!');

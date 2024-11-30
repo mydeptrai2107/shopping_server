@@ -8,8 +8,6 @@ productRouter.get('/api/products', async (req, res) => {
     try {
 
         const products = await Product.find({ category: req.query.category });
-
-
         res.json(products);
     } catch (error) {
         res.status(500).json({ error: e.message });
@@ -107,10 +105,6 @@ productRouter.get("/api/get-ratings-average/:id", async (req, res) => {
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
-
-
-
-
 });
 
 
@@ -150,14 +144,6 @@ productRouter.get("/api/deal-of-the-day", async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 })
-
-
-
-
-
-
-
-
 
 module.exports = productRouter;
 

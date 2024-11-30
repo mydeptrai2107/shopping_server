@@ -4,37 +4,39 @@ const ratingSchema = require("./rating");
 const productSchema = mongoose.Schema({
     name: {
         type: String,
-        required : true,
-        trim : true,
+        required: true,
+        trim: true,
     },
     description: {
         type: String,
-        required : true,
+        required: true,
         trim: true,
     },
-    images : [
+    images: [
         {
             type: String,
-            required : true,
-        }
+            required: true,
+        },
     ],
-    quantity : {
+    quantity: {
         type: Number,
-        required : true,
+        required: true,
     },
-    price : {
+    price: {
         type: Number,
-        required : true,
+        required: true,
     },
-    category : {
+    category: {
         type: String,
-        required : true,
+        required: true,
     },
-
-    ratings : [ratingSchema],
-    
+    ratings: [ratingSchema],
+    shopId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "Shop", // Tên của model Shop
+    },
 });
 
-
 const Product = mongoose.model("Product", productSchema);
-module.exports = {Product, productSchema};
+module.exports = { Product, productSchema };

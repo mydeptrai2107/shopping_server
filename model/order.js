@@ -9,6 +9,11 @@ const orderSchema = mongoose.Schema({
         type: Number,
         required: true,
       },
+      shopId: {
+        type: mongoose.Schema.Types.ObjectId,  // Mỗi sản phẩm sẽ có một shopId riêng
+        required: true,
+        ref: "Shop",   // Liên kết với model Shop để biết sản phẩm thuộc cửa hàng nào
+      },
     },
   ],
   totalPrice: {
