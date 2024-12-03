@@ -14,6 +14,28 @@ productRouter.get('/api/products', async (req, res) => {
     }
 })
 
+productRouter.get('/api/shop/products/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const products = await Product.find({ shopId: id });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: e.message });
+    }
+})
+productRouter.get('/api/products/shop', async (req, res) => {
+    try {
+
+        const { category } = req.query.category;
+        const { shopId } = req.params;
+        console.log(`Connected at PORT : ${category}`)
+
+        const products = await Product.find({ category: category });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: e.message });
+    }
+})
 productRouter.get('/api/products/search/:name', async (req, res) => {
     try {
         const products = await Product.find({

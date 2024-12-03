@@ -125,68 +125,94 @@ userRouter.post("/api/save-user-address", auth, async (req, res) => {
 
 userRouter.post("/api/order", auth, async (req, res) => {
     try {
-        const { totalPrice, address, voucherCode, paid , payMethod} = req.body;
+        const { address, voucherCode, paid, payMethod } = req.body;
         let user = await User.findById(req.user);
         if (!user) return res.status(404).json({ error: "User not found" });
 
         const userCart = user.cart;
-        let products = [];
 
-        let finalPrice = totalPrice;
-        if (voucherCode) {
-            const voucher = await Voucher.findOne({ code: voucherCode });
-            if (voucher) {
-                const currentDate = new Date();
-                if (voucher.expirationDate > currentDate && voucher.usedCount < voucher.usageLimit) {
-                    if (voucher.discountType === 'percentage') {
-                        finalPrice = totalPrice - (totalPrice * (voucher.discountValue / 100));
-                    } else if (voucher.discountType === 'fixed') {
-                        finalPrice = totalPrice - voucher.discountValue;
-                    }
-                    finalPrice = Math.max(finalPrice, 0);
+        if (!userCart || userCart.length === 0) {
+            return res.status(400).json({ error: "Your cart is empty" });
+        }
 
-                    voucher.usedCount += 1;
-                    await voucher.save();
+        let orders = [];
+        let shopOrders = {};
+
+        // Nhóm sản phẩm theo shopId
+        for (let item of userCart) {
+            const { shopId } = item.product;
+            if (!shopOrders[shopId]) shopOrders[shopId] = [];
+            shopOrders[shopId].push(item);
+        }
+
+        for (let shopId in shopOrders) {
+            let products = [];
+            let totalPrice = 0;
+
+            for (let item of shopOrders[shopId]) {
+                let product = await Product.findById(item.product._id);
+                if (product.quantity >= item.quantity) {
+                    product.quantity -= item.quantity;
+                    products.push({ product, quantity: item.quantity });
+                    totalPrice += product.price * item.quantity;
+                    await product.save();
                 } else {
-                    return res.status(400).json({ error: 'Invalid or expired voucher' });
+                    return res.status(400).json({ error: `${product.name} is out of stock!` });
                 }
-            } else {
-                return res.status(400).json({ error: 'Voucher not found' });
             }
+
+            let finalPrice = totalPrice;
+
+            // Áp dụng mã giảm giá nếu có
+            if (voucherCode) {
+                const voucher = await Voucher.findOne({ code: voucherCode });
+                if (voucher) {
+                    const currentDate = new Date();
+                    if (voucher.expirationDate > currentDate && voucher.usedCount < voucher.usageLimit) {
+                        if (voucher.discountType === "percentage") {
+                            finalPrice -= totalPrice * (voucher.discountValue / 100);
+                        } else if (voucher.discountType === "fixed") {
+                            finalPrice -= voucher.discountValue;
+                        }
+                        finalPrice = Math.max(finalPrice, 0);
+
+                        voucher.usedCount += 1;
+                        await voucher.save();
+                    } else {
+                        return res.status(400).json({ error: "Invalid or expired voucher" });
+                    }
+                } else {
+                    return res.status(400).json({ error: "Voucher not found" });
+                }
+            }
+
+            // Tạo order cho từng shop
+            const order = new Order({
+                products,
+                totalPrice: finalPrice,
+                address,
+                userId: req.user,
+                shopId,
+                orderedAt: new Date().getTime(),
+                paid,
+                payMethod,
+            });
+
+            await order.save();
+            orders.push(order);
         }
 
-        for (let i = 0; i < userCart.length; i++) {
-            let product = await Product.findById(userCart[i].product._id);
-            if (product.quantity >= userCart[i].quantity) {
-                product.quantity -= userCart[i].quantity;
-                products.push({ product, quantity: userCart[i].quantity });
-                await product.save();
-            } else {
-                return res.status(400).json({ error: `${product.name} is out of stock!` });
-            }
-        }
-
+        // Xóa giỏ hàng sau khi tạo các đơn hàng
         user.cart = [];
-        user = await user.save();
+        await user.save();
 
-        let order = new Order({
-            products,
-            totalPrice: finalPrice,
-            address,
-            userId: req.user,
-            orderedAt: new Date().getTime(),
-            paid: paid ,
-            payMethod: payMethod ,
-        });
-
-        order = await order.save();
-        res.json(order);
-
+        res.json(orders);
     } catch (e) {
         console.log(e);
         res.status(500).json({ error: e.message });
     }
 });
+
 
 
 
